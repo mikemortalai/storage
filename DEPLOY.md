@@ -62,8 +62,8 @@ Because the app runs **on the same server** as MySQL, `DB_HOST=localhost` is cor
 3. Upload the **entire Laravel project** into `public_html/storagesoftai`  
    (folders like `app`, `bootstrap`, `config`, `database`, `public`, `resources`, `routes`, `storage`, `vendor`, plus `artisan`, `composer.json`, etc.)
 4. Copy `deploy/public_html-storagesoftai.htaccess` to  
-   `public_html/storagesoftai/.htaccess`  
-   (this sends traffic into Laravel’s `public/` folder)
+   `~/isoverse.ai/storagesoftai/.htaccess`  
+   (this sends traffic into Laravel’s `public/` folder; must skip paths already under `public/`)
 5. Make writable (permissions **755** or **775**):
    - `storage`
    - `storage/*` subfolders

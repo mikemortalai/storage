@@ -5,8 +5,7 @@
 
     RewriteEngine On
 
-    # Subdirectory install at https://isoverse.ai/storagesoftai
-    # (root deploy/.htaccess internally maps /storagesoftai/* → public/*)
+    # Browser URLs are https://isoverse.ai/storagesoftai/... (no /public in the path)
     RewriteBase /storagesoftai/
 
     # Handle Authorization Header
