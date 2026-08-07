@@ -18,41 +18,48 @@ class FacilityContext
         $host = $host ?: request()->getHost();
         $host = preg_replace('/^www\./', '', strtolower($host));
 
-        $facility = Cache::remember("facility_host_{$host}", 60, function () use ($host) {
-            return Facility::query()
-                ->with(['organization', 'settings', 'unitTypes' => fn ($q) => $q->where('show_on_website', true)->orderBy('sort_order')])
+        $cacheKey = "facility_id_host_{$host}";
+        $facilityId = Cache::remember($cacheKey, 60, function () use ($host) {
+            $match = Facility::query()
                 ->where(function ($q) use ($host) {
                     $q->where('custom_domain', $host)
                         ->orWhere('custom_domain', 'www.'.$host)
                         ->orWhere('subdomain', $host);
                 })
                 ->where('is_active', true)
-                ->first();
-        });
+                ->value('id');
 
-        // Fallback demo/reference tenant (local + isoverse.ai/storagesoftai staging).
-        // Do not use env() here — it is null when config is cached.
-        $defaultSlug = (string) config('storagesoftai.default_facility_slug', '282-storage');
-        if (! $facility && $defaultSlug !== '') {
+            if ($match) {
+                return $match;
+            }
+
+            // Fallback demo/reference tenant (local + isoverse.ai/storagesoftai staging).
+            $defaultSlug = (string) config('storagesoftai.default_facility_slug', '282-storage');
             $useDefault = app()->environment('local')
                 || str_contains($host, '127.0.0.1')
                 || str_contains($host, 'localhost')
                 || str_contains($host, 'isoverse.ai');
 
-            if ($useDefault) {
-                $facility = Facility::with(['organization', 'settings', 'unitTypes' => fn ($q) => $q->where('show_on_website', true)->orderBy('sort_order')])
-                    ->where('slug', $defaultSlug)
-                    ->first();
-
-                // Last resort: first active facility on this install
-                if (! $facility) {
-                    $facility = Facility::with(['organization', 'settings', 'unitTypes' => fn ($q) => $q->where('show_on_website', true)->orderBy('sort_order')])
-                        ->where('is_active', true)
-                        ->orderBy('id')
-                        ->first();
-                }
+            if ($useDefault && $defaultSlug !== '') {
+                return Facility::query()
+                    ->where('is_active', true)
+                    ->where(function ($q) use ($defaultSlug) {
+                        $q->where('slug', $defaultSlug)->orWhere('id', '>', 0);
+                    })
+                    ->orderByRaw('CASE WHEN slug = ? THEN 0 ELSE 1 END', [$defaultSlug])
+                    ->value('id');
             }
-        }
+
+            return null;
+        });
+
+        $facility = $facilityId
+            ? Facility::with([
+                'organization',
+                'settings',
+                'unitTypes' => fn ($q) => $q->where('show_on_website', true)->orderBy('sort_order'),
+            ])->find($facilityId)
+            : null;
 
         $this->facility = $facility;
 
