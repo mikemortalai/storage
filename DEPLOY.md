@@ -1,35 +1,28 @@
 # Deploy StorageSoftAI to https://isoverse.ai/storagesoftai
 
-Use the **server MySQL** you already created. No local MySQL needed.
+Host path on this account: `~/isoverse.ai/storagesoftai`  
+(Not `public_html`.)
 
-## 1. Prepare files on your computer
+## One-time file layout
 
-From this project (after `git pull`):
+Your Cyberduck upload of the full Laravel project into `isoverse.ai/storagesoftai` is correct.
 
-```bash
-composer install --no-dev --optimize-autoloader
-npm install
-npm run build
-```
+Then add/replace these **two** files in that same folder (next to `app/`, `artisan`, `public/`):
 
-If you don’t have Composer/Node on your PC, use a machine that does, or ask hosting support / use cPanel Terminal if available.
+1. **`.htaccess`** ← copy from `deploy/public_html-storagesoftai.htaccess`
+2. **`index.php`** ← copy from `deploy/subdir-index.php`
 
-## 2. Create `.env` on the server (not in git)
+Do **not** visit `/storagesoftai/public` in the browser. Use only:
+https://isoverse.ai/storagesoftai
 
-In File Manager, inside `public_html/storagesoftai/`, create `.env` with:
+## `.env` (same folder)
 
 ```env
 APP_NAME=StorageSoftAI
 APP_ENV=production
-APP_KEY=
+APP_KEY=   # filled by php artisan key:generate
 APP_DEBUG=false
 APP_URL=https://isoverse.ai/storagesoftai
-
-APP_LOCALE=en
-APP_FALLBACK_LOCALE=en
-
-LOG_CHANNEL=stack
-LOG_LEVEL=error
 
 DB_CONNECTION=mysql
 DB_HOST=localhost
@@ -39,68 +32,49 @@ DB_USERNAME=YOUR_DB_USER
 DB_PASSWORD=YOUR_DB_PASSWORD
 
 SESSION_DRIVER=database
-SESSION_LIFETIME=120
 SESSION_PATH=/storagesoftai
-
 CACHE_STORE=database
 QUEUE_CONNECTION=database
-FILESYSTEM_DISK=local
-
-MAIL_MAILER=log
-MAIL_FROM_ADDRESS="hello@isoverse.ai"
-MAIL_FROM_NAME="${APP_NAME}"
 
 DEFAULT_FACILITY_SLUG=282-storage
 ```
 
-Because the app runs **on the same server** as MySQL, `DB_HOST=localhost` is correct here.
-
-## 3. Upload with cPanel File Manager or FTP
-
-1. In cPanel → **File Manager** → go to `public_html`
-2. Create folder: `storagesoftai`
-3. Upload the **entire Laravel project** into `public_html/storagesoftai`  
-   (folders like `app`, `bootstrap`, `config`, `database`, `public`, `resources`, `routes`, `storage`, `vendor`, plus `artisan`, `composer.json`, etc.)
-4. Copy `deploy/public_html-storagesoftai.htaccess` to  
-   `~/isoverse.ai/storagesoftai/.htaccess`  
-   (this sends traffic into Laravel’s `public/` folder; must skip paths already under `public/`)
-5. Make writable (permissions **755** or **775**):
-   - `storage`
-   - `storage/*` subfolders
-   - `bootstrap/cache`
-
-Skip uploading: `.env` from your laptop if it has secrets mixed up — create the server `.env` as in step 2.  
-Do **not** upload `node_modules`.
-
-## 4. Finish setup in cPanel Terminal (or SSH)
+## Terminal setup
 
 ```bash
-cd ~/public_html/storagesoftai
+cd ~/isoverse.ai/storagesoftai
+
+# Use PHP 8.3+ / 8.4 if `php -v` is still 8.2:
+# /opt/cpanel/ea-php84/root/usr/bin/php artisan ...
+
 php artisan key:generate
 php artisan migrate --seed --force
+php artisan config:clear
 php artisan config:cache
-php artisan route:cache
-php artisan view:cache
 ```
 
-## 5. Open the site
+If `composer` is not on the server, upload a local `vendor/` folder built with PHP 8.3+.
 
-- App: https://isoverse.ai/storagesoftai  
-- Admin: https://isoverse.ai/storagesoftai/admin  
-- Login: https://isoverse.ai/storagesoftai/login  
+## Permissions
+
+```bash
+chmod -R 775 storage bootstrap/cache
+```
+
+## Demo logins
 
 | Role | Email | Password |
 |---|---|---|
 | Owner | `owner@282storage.com` | `password` |
 | Tenant | `tenant@282storage.com` | `password` |
 
-**Change those passwords after first login.**
+## If you still get 500
 
-## Troubleshooting
-
-| Problem | Fix |
-|---|---|
-| 500 error | Check `storage/logs/laravel.log`; confirm `storage` + `bootstrap/cache` writable |
-| CSS missing | Confirm `public/build` was uploaded; `APP_URL` exact match |
-| DB error | `DB_HOST=localhost`, correct db/user/pass from cPanel |
-| Wrong links | `APP_URL=https://isoverse.ai/storagesoftai` (no trailing slash) |
+```bash
+cat ~/isoverse.ai/storagesoftai/.htaccess
+cat ~/isoverse.ai/storagesoftai/index.php
+tail -50 ~/isoverse.ai/storagesoftai/error_log
+tail -50 ~/isoverse.ai/storagesoftai/public/error_log
+php -v
+php artisan about
+```

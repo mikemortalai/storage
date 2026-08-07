@@ -1,7 +1,23 @@
-# Place this file as: public_html/storagesoftai/.htaccess
-# (i.e. the Laravel project root that lives at /storagesoftai on the site)
+# Place this file as: ~/isoverse.ai/storagesoftai/.htaccess
+# (next to app/, public/, artisan — NOT inside public/)
+
+<IfModule mime_module>
+  AddHandler application/x-httpd-ea-php84 .php .php8 .phtml
+</IfModule>
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteRule ^(.*)$ public/$1 [L]
+    RewriteBase /storagesoftai/
+
+    # Map asset URLs to Laravel's public/ folder without exposing /public in redirects
+    RewriteRule ^build/(.*)$ public/build/$1 [L]
+    RewriteRule ^favicon\.ico$ public/favicon.ico [L]
+    RewriteRule ^robots\.txt$ public/robots.txt [L]
+
+    # Front controller (storagesoftai/index.php → includes public/index.php)
+    RewriteRule ^index\.php$ - [L]
+
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
 </IfModule>
