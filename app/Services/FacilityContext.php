@@ -30,11 +30,19 @@ class FacilityContext
                 ->first();
         });
 
-        // Local/dev fallback: 282 Storage as default demo tenant
-        if (! $facility && (app()->environment('local') || str_contains($host, '127.0.0.1') || str_contains($host, 'localhost'))) {
-            $facility = Facility::with(['organization', 'settings', 'unitTypes' => fn ($q) => $q->where('show_on_website', true)->orderBy('sort_order')])
-                ->where('slug', '282-storage')
-                ->first();
+        // Fallback demo/reference tenant (local + isoverse.ai/storagesoftai staging)
+        $defaultSlug = env('DEFAULT_FACILITY_SLUG', '282-storage');
+        if (! $facility && $defaultSlug) {
+            $useDefault = app()->environment('local')
+                || str_contains($host, '127.0.0.1')
+                || str_contains($host, 'localhost')
+                || str_contains($host, 'isoverse.ai');
+
+            if ($useDefault) {
+                $facility = Facility::with(['organization', 'settings', 'unitTypes' => fn ($q) => $q->where('show_on_website', true)->orderBy('sort_order')])
+                    ->where('slug', $defaultSlug)
+                    ->first();
+            }
         }
 
         $this->facility = $facility;

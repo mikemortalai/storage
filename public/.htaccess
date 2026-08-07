@@ -5,6 +5,10 @@
 
     RewriteEngine On
 
+    # Subdirectory install at https://isoverse.ai/storagesoftai
+    # (root deploy/.htaccess internally maps /storagesoftai/* → public/*)
+    RewriteBase /storagesoftai/
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

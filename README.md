@@ -19,7 +19,11 @@ Multi-tenant **Storage Management Software** (PHP + MySQL / Laravel) with:
 
 Chosen for **shared hosting** compatibility (cPanel / Apache / PHP-FPM). Node is only needed to build front-end assets once.
 
-## Local setup
+## Deploy to isoverse.ai/storagesoftai
+
+See **[DEPLOY.md](DEPLOY.md)** for the simple cPanel upload path (server MySQL + `DB_HOST=localhost`).
+
+## Local setup (optional)
 
 ```bash
 cp .env.example .env
