@@ -30,9 +30,10 @@ class FacilityContext
                 ->first();
         });
 
-        // Fallback demo/reference tenant (local + isoverse.ai/storagesoftai staging)
-        $defaultSlug = env('DEFAULT_FACILITY_SLUG', '282-storage');
-        if (! $facility && $defaultSlug) {
+        // Fallback demo/reference tenant (local + isoverse.ai/storagesoftai staging).
+        // Do not use env() here — it is null when config is cached.
+        $defaultSlug = (string) config('storagesoftai.default_facility_slug', '282-storage');
+        if (! $facility && $defaultSlug !== '') {
             $useDefault = app()->environment('local')
                 || str_contains($host, '127.0.0.1')
                 || str_contains($host, 'localhost')
@@ -42,6 +43,14 @@ class FacilityContext
                 $facility = Facility::with(['organization', 'settings', 'unitTypes' => fn ($q) => $q->where('show_on_website', true)->orderBy('sort_order')])
                     ->where('slug', $defaultSlug)
                     ->first();
+
+                // Last resort: first active facility on this install
+                if (! $facility) {
+                    $facility = Facility::with(['organization', 'settings', 'unitTypes' => fn ($q) => $q->where('show_on_website', true)->orderBy('sort_order')])
+                        ->where('is_active', true)
+                        ->orderBy('id')
+                        ->first();
+                }
             }
         }
 
